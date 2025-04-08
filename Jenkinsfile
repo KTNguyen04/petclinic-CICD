@@ -122,30 +122,28 @@ pipeline {
                     }
 
                     if (services) {
-                        docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
-                            for (service in services) {
-                                def serviceName = service.trim().replace("/", "")
-                                def tag = (env.BRANCH_NAME == 'main') ? 'latest' : COMMIT_ID
-                                def imageName = "${DOCKERHUB_USERNAME}/${serviceName}:${tag}"
-                                def port = getExposedPort(serviceName)
+                        for (service in services) {
+                            def serviceName = service.trim().replace("/", "")
+                            def tag = (env.BRANCH_NAME == 'main') ? 'latest' : COMMIT_ID
+                            def imageName = "${DOCKERHUB_USERNAME}/${serviceName}:${tag}"
+                            def port = getExposedPort(serviceName)
 
-                                echo "Building and pushing ${imageName}..."
+                            echo "Building and pushing ${imageName}..."
 
-                                // truyền ARG là path đến jar file
-                                // def artifactPath = "${serviceName}/target/${serviceName}*"
-                                def artifactPath = sh(
-                                    script: "ls ${serviceName}/target/${serviceName}*.jar | head -n 1",
-                                    returnStdout: true
-                                ).trim()
+                            // truyền ARG là path đến jar file
+                            // def artifactPath = "${serviceName}/target/${serviceName}*"
+                            def artifactPath = sh(
+                                script: "ls ${serviceName}/target/${serviceName}*.jar | head -n 1",
+                                returnStdout: true
+                            ).trim()
 
-                                def image = docker.build(imageName,
-                                    "--file docker/Dockerfile " +
-                                    "--build-arg ARTIFACT_NAME=${artifactPath} " +
-                                    "--build-arg EXPOSED_PORT=${port} " +
-                                    ".") // build context là thư mục root
+                            def image = docker.build(imageName,
+                                "--file docker/Dockerfile " +
+                                "--build-arg ARTIFACT_NAME=${artifactPath} " +
+                                "--build-arg EXPOSED_PORT=${port} " +
+                                ".") // build context là thư mục root
 
-                                image.push()
-                            }
+                            image.push()
                         }
                     } else {
                         echo "No services to build image for."
