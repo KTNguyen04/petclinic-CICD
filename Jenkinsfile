@@ -107,7 +107,7 @@ pipeline {
 
         stage('Build and Push Docker Image') {
             environment {
-                DOCKERHUB_CREDENTIALS = credentials('dockerhub-cre')
+                // DOCKERHUB_CREDENTIALS = credentials('dockerhub-cre')
                 DOCKERHUB_USERNAME = 'championvi12'
             }
             steps {
@@ -120,7 +120,7 @@ pipeline {
                     } else if (AFFECTED_SERVICES?.trim()) {
                         services = AFFECTED_SERVICES.split(',')
                     }
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-cre') {
                         if (services) {
                             for (service in services) {
                                 def serviceName = service.trim().replace("/", "")
