@@ -1,11 +1,11 @@
-FROM eclipse-temurin:17 AS builder
+FROM eclipse-temurin:17.0.14_7-jdk-ubi9-minimal AS builder
 WORKDIR application
 ARG ARTIFACT_NAME
 COPY ${ARTIFACT_NAME}.jar application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 
 
-FROM eclipse-temurin:17
+FROM eclipse-temurin:17.0.14_7-jdk-ubi9-minimal
 WORKDIR application
 
 ARG EXPOSED_PORT
