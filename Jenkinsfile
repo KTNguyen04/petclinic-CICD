@@ -136,7 +136,7 @@ pipeline {
                                 script: "ls ${serviceName}/target/${serviceName}*.jar | head -n 1",
                                 returnStdout: true
                             ).trim()
-
+                            sh 'whoami'
                             def image = docker.build(imageName,
                                 "--file docker/Dockerfile " +
                                 "--build-arg ARTIFACT_NAME=${artifactPath} " +
