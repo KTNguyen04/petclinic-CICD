@@ -122,7 +122,7 @@ pipeline {
                     }
 
                     if (services) {
-                        docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                        docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
                             for (service in services) {
                                 def serviceName = service.trim().replace("/", "")
                                 def tag = (env.BRANCH_NAME == 'main') ? 'latest' : COMMIT_ID
