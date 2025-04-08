@@ -132,7 +132,11 @@ pipeline {
                                 echo "Building and pushing ${imageName}..."
 
                                 // truyền ARG là path đến jar file
-                                def artifactPath = "${serviceName}/target/${serviceName}"
+                                // def artifactPath = "${serviceName}/target/${serviceName}*"
+                                def artifactPath = sh(
+                                    script: "ls ${serviceName}/target/${serviceName}*.jar | head -n 1",
+                                    returnStdout: true
+                                ).trim()
 
                                 def image = docker.build(imageName,
                                     "--file docker/Dockerfile " +
