@@ -116,9 +116,15 @@ pipeline {
                     def services = []
 
                     if (env.BRANCH_NAME == 'main') {
+                        sh './mvnw clean install -P buildDocker'
                         services = sh(script: "ls -d */ | grep service", returnStdout: true).trim().split("\n")
                     } else if (AFFECTED_SERVICES?.trim()) {
                         services = AFFECTED_SERVICES.split(',')
+
+                        for (service in services) {
+                            def dir = service.trim()
+                            sh "cd ${dir} && ../mvnw clean install -P buildDocker"
+                        }
                     }
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-cre') {
                         if (services) {
@@ -126,24 +132,10 @@ pipeline {
                                 def serviceName = service.trim().replace("/", "")
                                 def tag = (env.BRANCH_NAME == 'main') ? 'latest' : COMMIT_ID
                                 def imageName = "${DOCKERHUB_USERNAME}/${serviceName}:${tag}"
-                                def port = getExposedPort(serviceName)
 
-                                echo "Building and pushing ${imageName}..."
+                                echo "Pushing image ${imageName}..."
 
-                                // truyền ARG là path đến jar file
-                                // def artifactPath = "${serviceName}/target/${serviceName}*"
-                                def artifactPath = sh(
-                                    script: "ls ${serviceName}/target/${serviceName}*.jar | head -n 1",
-                                    returnStdout: true
-                                ).trim()
-                                sh 'whoami'
-                                def image = docker.build(imageName,
-                                    "--file docker/Dockerfile " +
-                                    "--build-arg ARTIFACT_NAME=${artifactPath} " +
-                                    "--build-arg EXPOSED_PORT=${port} " +
-                                    ".") // build context là thư mục root
-
-                                image.push()
+                                docker.image(imageName).push()
                             }
                         } else {
                             echo "No services to build image for."
