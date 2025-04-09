@@ -117,7 +117,7 @@ pipeline {
 
                     if (env.BRANCH_NAME == 'main') {
                         sh './mvnw clean install -P buildDocker'
-                        services = sh(script: "ls -d */ | grep service", returnStdout: true).trim().split("\n")
+                        services = sh(script: "ls -d spring-petclinic*/ | cut -f1 -d'/'", returnStdout: true).trim().split("\n")
                     } else if (AFFECTED_SERVICES?.trim()) {
                         services = AFFECTED_SERVICES.split(',')
 
@@ -148,19 +148,3 @@ pipeline {
     }
 }
 
-def getExposedPort(serviceName) {
-    def ports = [
-        'api-gateway': '8080',
-        'customers-service': '8081',
-        'visits-service'  : '8082',
-        'vets-service'    : '8083',
-        'genai-service': '8084',
-        'discovery-server': '8761',
-        'config-server' : '8888',
-        'admin-server': '9090',
-    ]
-    // "spring-petclinic-customers-service" → "customers-service"
-    def shortName = serviceName.tokenize('-').takeRight(2).join('-')
-
-    return ports.get(shortName, '8080')
-}
