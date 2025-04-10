@@ -1,0 +1,8 @@
+ingress:
+  enabled: true
+  className: "nginx"
+  host: "preview.dev"
+  path: "/"
+  pathType: Prefix
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /

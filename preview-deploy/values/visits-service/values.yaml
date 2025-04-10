@@ -1,0 +1,6 @@
+services:
+  visits-service:
+    enabled: true
+    image: "spring-petclinic-visits-service"
+    tag: "latest"
+    port: 8082
