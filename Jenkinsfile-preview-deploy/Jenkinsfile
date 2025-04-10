@@ -1,0 +1,75 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'BRANCH_ADMIN', defaultValue: 'main', description: 'admin-server')
+        string(name: 'BRANCH_API', defaultValue: 'main', description: 'api-gateway')
+        string(name: 'BRANCH_CONFIG', defaultValue: 'main', description: 'config-server')
+        string(name: 'BRANCH_CUSTOMERS', defaultValue: 'main', description: 'customers-service')
+        string(name: 'BRANCH_DISCOVERY', defaultValue: 'main', description: 'discovery-server')
+        string(name: 'BRANCH_GENAI', defaultValue: 'main', description: 'genai-service')
+        string(name: 'BRANCH_VETS', defaultValue: 'main', description: 'vets-service')
+        string(name: 'BRANCH_VISITS', defaultValue: 'main', description: 'visits-service')
+    }
+
+    environment {
+        HELM_CHART_DIR = "./preview-deploy"
+    }
+
+    stages {
+        stage('Deploy on K8s cluster') {
+            steps {
+                script {
+                    def services = [
+                        [key: 'admin-server', branch: params.BRANCH_ADMIN],
+                        [key: 'api-gateway', branch: params.BRANCH_API],
+                        [key: 'config-server', branch: params.BRANCH_CONFIG],
+                        [key: 'customers-service', branch: params.BRANCH_CUSTOMERS],
+                        [key: 'discovery-server', branch: params.BRANCH_DISCOVERY],
+                        [key: 'genai-service', branch: params.BRANCH_GENAI],
+                        [key: 'vets-service', branch: params.BRANCH_VETS],
+                        [key: 'visits-service', branch: params.BRANCH_VISITS]
+                    ]
+
+                    def setArgs = ""
+                    def valuesArgs = ""
+                    def hashPart = ""
+
+                    services.each { svc ->
+                        def fullName = "spring-petclinic-${svc.key}"
+                        def branch = svc.branch
+
+                        valuesArgs += " -f values/${svc.key}/values.yaml"
+
+                        if (branch == 'main') {
+                            setArgs += " --set services.\"${fullName}\".tag=latest"
+                        } else {
+                            def commit = sh(
+                                script: "git ls-remote origin refs/heads/${branch} | cut -c1-7",
+                                returnStdout: true
+                            ).trim()
+
+                            setArgs += " --set services.\"${fullName}\".tag=${commit}"
+                            hashPart += "-${commit}"
+                        }
+                    }
+
+                    valuesArgs += " -f values/ingress/values.yaml"
+
+                    def releaseName = "preview-deploy${hashPart}"
+                    def namespace = "preview-deploy${hashPart}"
+
+                    echo "Release: ${releaseName}"
+                    echo "Namespace: ${namespace}"
+
+                    sh """
+                        helm upgrade --install ${releaseName} ${HELM_CHART_DIR} \
+                          -n ${namespace} --create-namespace \
+                          ${valuesArgs} \
+                          ${setArgs}
+                    """
+                }
+            }
+        }
+    }
+}
