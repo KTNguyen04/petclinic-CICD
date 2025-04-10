@@ -23,7 +23,7 @@ pipeline {
                         echo "Skipping build because commit message contains [skip ci]"
                         currentBuild.result = 'SUCCESS'
                         // Exit pipeline early
-                        return
+                        error("Build skipped due to [skip ci] in commit message")
                     }
                 }
             }
