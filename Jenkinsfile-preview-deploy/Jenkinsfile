@@ -2,21 +2,20 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'BRANCH_ADMIN', defaultValue: 'main', description: 'admin-server')
-        string(name: 'BRANCH_API', defaultValue: 'main', description: 'api-gateway')
-        string(name: 'BRANCH_CONFIG', defaultValue: 'main', description: 'config-server')
-        string(name: 'BRANCH_CUSTOMERS', defaultValue: 'main', description: 'customers-service')
-        string(name: 'BRANCH_DISCOVERY', defaultValue: 'main', description: 'discovery-server')
-        string(name: 'BRANCH_GENAI', defaultValue: 'main', description: 'genai-service')
-        string(name: 'BRANCH_VETS', defaultValue: 'main', description: 'vets-service')
-        string(name: 'BRANCH_VISITS', defaultValue: 'main', description: 'visits-service')
+        // (Branch for each service to build)
+        string(name: 'admin-server', defaultValue: 'main', description: 'Branch for admin-server')
+        string(name: 'api-gateway', defaultValue: 'main', description: 'Branch for api-gateway')
+        string(name: 'config-server', defaultValue: 'main', description: 'Branch for config-server')
+        string(name: 'customers-service', defaultValue: 'main', description: 'Branch for customers-service')
+        string(name: 'discovery-server', defaultValue: 'main', description: 'Branch for discovery-server')
+        string(name: 'genai-service', defaultValue: 'main', description: 'Branch for genai-service')
+        string(name: 'vets-service', defaultValue: 'main', description: 'Branch for vets-service')
+        string(name: 'visits-service', defaultValue: 'main', description: 'Branch for visits-service')
     }
 
     environment {
         HELM_CHART_DIR = "./preview-deploy"
     }
-
-    
 
     stages {
 
@@ -24,14 +23,14 @@ pipeline {
             steps {
                 script {
                     def branches = [
-                        params.BRANCH_ADMIN,
-                        params.BRANCH_API,
-                        params.BRANCH_CONFIG,
-                        params.BRANCH_CUSTOMERS,
-                        params.BRANCH_DISCOVERY,
-                        params.BRANCH_GENAI,
-                        params.BRANCH_VETS,
-                        params.BRANCH_VISITS
+                        params['admin-server'],
+                        params['api-gateway'],
+                        params['config-server'],
+                        params['customers-service'],
+                        params['discovery-server'],
+                        params['genai-service'],
+                        params['vets-service'],
+                        params['visits-service']
                     ]
                     def allMain = branches.every { it == 'main' }
 
@@ -42,19 +41,18 @@ pipeline {
             }
         }
 
-
         stage('Deploy on K8s cluster') {
             steps {
                 script {
                     def services = [
-                        [key: 'admin-server', branch: params.BRANCH_ADMIN],
-                        [key: 'api-gateway', branch: params.BRANCH_API],
-                        [key: 'config-server', branch: params.BRANCH_CONFIG],
-                        [key: 'customers-service', branch: params.BRANCH_CUSTOMERS],
-                        [key: 'discovery-server', branch: params.BRANCH_DISCOVERY],
-                        [key: 'genai-service', branch: params.BRANCH_GENAI],
-                        [key: 'vets-service', branch: params.BRANCH_VETS],
-                        [key: 'visits-service', branch: params.BRANCH_VISITS]
+                        [key: 'admin-server', branch: params['admin-server']],
+                        [key: 'api-gateway', branch: params['api-gateway']],
+                        [key: 'config-server', branch: params['config-server']],
+                        [key: 'customers-service', branch: params['customers-service']],
+                        [key: 'discovery-server', branch: params['discovery-server']],
+                        [key: 'genai-service', branch: params['genai-service']],
+                        [key: 'vets-service', branch: params['vets-service']],
+                        [key: 'visits-service', branch: params['visits-service']]
                     ]
 
                     def setArgs = ""
