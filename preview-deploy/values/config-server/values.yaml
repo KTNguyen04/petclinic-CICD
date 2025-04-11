@@ -1,6 +1,6 @@
 services:
   config-server:
     enabled: true
-    image: "spring-petclinic-config-server"
+    image: "championvi12/spring-petclinic-config-server"
     tag: "latest"
     port: 8888

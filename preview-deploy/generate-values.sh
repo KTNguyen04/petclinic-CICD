@@ -12,6 +12,8 @@ services=(
   "admin-server"
 )
 
+account="championvi12"
+
 # get port of service
 get_port() {
   case "$1" in
@@ -38,7 +40,7 @@ for svc in "${services[@]}"; do
 services:
   ${svc}:
     enabled: true
-    image: "spring-petclinic-${svc}"
+    image: "${account}/spring-petclinic-${svc}"
     tag: "latest"
     port: ${port}
 EOF

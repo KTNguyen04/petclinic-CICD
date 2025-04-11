@@ -83,6 +83,8 @@ pipeline {
                     // valuesArgs += " -f values/ingress/values.yaml"
                     // valuesArgs += " -f ${HELM_CHART_DIR}/values/ingress/values.yaml"
                     valuesArgs += " -f ${HELM_CHART_DIR}/ingress-values.yaml"
+                    setArgs += " --set ingress.host=preview.dev${hashPart}"
+
 
 
                     def releaseName = "preview-deploy${hashPart}"

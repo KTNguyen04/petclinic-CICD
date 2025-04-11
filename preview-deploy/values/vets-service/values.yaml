@@ -1,6 +1,6 @@
 services:
   vets-service:
     enabled: true
-    image: "spring-petclinic-vets-service"
+    image: "championvi12/spring-petclinic-vets-service"
     tag: "latest"
     port: 8083

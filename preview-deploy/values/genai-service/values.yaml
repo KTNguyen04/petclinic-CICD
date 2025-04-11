@@ -1,6 +1,6 @@
 services:
   genai-service:
     enabled: true
-    image: "spring-petclinic-genai-service"
+    image: "championvi12/spring-petclinic-genai-service"
     tag: "latest"
     port: 8084

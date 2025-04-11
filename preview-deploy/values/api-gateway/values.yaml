@@ -1,6 +1,6 @@
 services:
   api-gateway:
     enabled: true
-    image: "spring-petclinic-api-gateway"
+    image: "championvi12/spring-petclinic-api-gateway"
     tag: "latest"
     port: 8080
