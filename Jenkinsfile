@@ -148,12 +148,19 @@ pipeline {
                         if (services) {
                             for (service in services) {
                                 def serviceName = service.trim().replace("/", "")
+                                def originalTag = "latest"
                                 def tag = (env.BRANCH_NAME == 'main') ? 'latest' : COMMIT_ID
-                                def imageName = "${DOCKERHUB_USERNAME}/${serviceName}:${tag}"
 
+                                def sourceImage = "${DOCKERHUB_USERNAME}/${serviceName}:${originalTag}"
+                                def targetImage = "${DOCKERHUB_USERNAME}/${serviceName}:${tag}"
+
+                                echo "Tagging image ${sourceImage} as ${targetImage}..."
+
+                                // Retag
+                                sh "docker tag ${sourceImage} ${targetImage}"
                                 echo "Pushing image ${imageName}..."
 
-                                docker.image(imageName).push()
+                                docker.image(targetImage).push()
                             }
                         } else {
                             echo "No services to build image for."
