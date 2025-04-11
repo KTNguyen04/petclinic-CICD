@@ -63,7 +63,9 @@ pipeline {
                         def fullName = "spring-petclinic-${svc.key}"
                         def branch = svc.branch
 
-                        valuesArgs += " -f values/${svc.key}/values.yaml"
+                        // valuesArgs += " -f values/${svc.key}/values.yaml"
+                        valuesArgs += " -f ${HELM_CHART_DIR}/values/${svc.key}/values.yaml"
+
 
                         if (branch == 'main') {
                             setArgs += " --set services.\"${fullName}\".tag=latest"
@@ -78,7 +80,10 @@ pipeline {
                         }
                     }
 
-                    valuesArgs += " -f values/ingress/values.yaml"
+                    // valuesArgs += " -f values/ingress/values.yaml"
+                    // valuesArgs += " -f ${HELM_CHART_DIR}/values/ingress/values.yaml"
+                    valuesArgs += " -f ${HELM_CHART_DIR}/ingress-values.yaml"
+
 
                     def releaseName = "preview-deploy${hashPart}"
                     def namespace = "preview-deploy${hashPart}"
