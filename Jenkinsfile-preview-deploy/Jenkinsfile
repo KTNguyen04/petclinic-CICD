@@ -16,7 +16,33 @@ pipeline {
         HELM_CHART_DIR = "./preview-deploy"
     }
 
+    
+
     stages {
+
+        stage('Check branches') {
+            steps {
+                script {
+                    def branches = [
+                        params.BRANCH_ADMIN,
+                        params.BRANCH_API,
+                        params.BRANCH_CONFIG,
+                        params.BRANCH_CUSTOMERS,
+                        params.BRANCH_DISCOVERY,
+                        params.BRANCH_GENAI,
+                        params.BRANCH_VETS,
+                        params.BRANCH_VISITS
+                    ]
+                    def allMain = branches.every { it == 'main' }
+
+                    if (allMain) {
+                        error("All branches are 'main'. Skipping deployment for developer.")
+                    }
+                }
+            }
+        }
+
+
         stage('Deploy on K8s cluster') {
             steps {
                 script {
