@@ -158,7 +158,7 @@ pipeline {
 
                                 // Retag
                                 sh "docker tag ${sourceImage} ${targetImage}"
-                                echo "Pushing image ${imageName}..."
+                                echo "Pushing image ${targetImage}..."
 
                                 docker.image(targetImage).push()
                             }
