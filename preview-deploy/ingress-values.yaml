@@ -3,38 +3,40 @@ ingress:
   className: "nginx"
   host: "preview.dev"
   pathType: Prefix
+
+  # Nếu bạn không cần rewrite đường dẫn, thì bỏ luôn annotation này
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/rewrite-target: / # chỉ dùng nếu muốn strip prefix
 
   rules:
-    - path: /()(.*)
+    - path: /
       service: api-gateway
       port: 8080
 
-    - path: /admin()(.*)
+    - path: /admin-server
       service: admin-server
       port: 9090
 
-    - path: /config()(.*)
+    - path: /config-server
       service: config-server
       port: 8888
 
-    - path: /discovery()(.*)
+    - path: /discovery-server
       service: discovery-server
       port: 8761
 
-    - path: /api/genai(/|$)(.*)
+    - path: /api/genai
       service: genai-service
       port: 8084
 
-    - path: /api/customers(/|$)(.*)
+    - path: /api/customers
       service: customers-service
       port: 8081
 
-    - path: /api/vets(/|$)(.*)
+    - path: /api/vets
       service: vets-service
       port: 8083
 
-    - path: /api/pets(/|$)(.*)
+    - path: /api/pets
       service: visits-service
       port: 8082
