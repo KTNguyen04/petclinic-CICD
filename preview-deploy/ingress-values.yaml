@@ -2,7 +2,39 @@ ingress:
   enabled: true
   className: "nginx"
   host: "preview.dev"
-  path: "/"
   pathType: Prefix
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+  rules:
+    - path: /()(.*)
+      service: api-gateway
+      port: 8080
+
+    - path: /admin()(.*)
+      service: admin-server
+      port: 9090
+
+    - path: /config()(.*)
+      service: config-server
+      port: 8888
+
+    - path: /discovery()(.*)
+      service: discovery-server
+      port: 8761
+
+    - path: /api/genai(/|$)(.*)
+      service: genai-service
+      port: 8084
+
+    - path: /api/customers(/|$)(.*)
+      service: customers-service
+      port: 8081
+
+    - path: /api/vets(/|$)(.*)
+      service: vets-service
+      port: 8083
+
+    - path: /api/pets(/|$)(.*)
+      service: visits-service
+      port: 8082

@@ -15,11 +15,13 @@ spec:
     - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
-          - path: {{ .Values.ingress.path }}
-            pathType: {{ .Values.ingress.pathType }}
+          {{- range .Values.ingress.rules }}
+          - path: {{ .path }}
+            pathType: {{ $.Values.ingress.pathType }}
             backend:
               service:
-                name: "api-gateway"
+                name: {{ .service }}
                 port:
-                  number: {{ index .Values.services "api-gateway" "port" }}
+                  number: {{ .port }}
+          {{- end }}
 {{- end }}
