@@ -99,6 +99,9 @@ pipeline {
                           ${valuesArgs} \
                           ${setArgs}
                     """
+
+                    echo "Deployed hash part: ${hashPart}"
+                    currentBuild.description = "Deployed hash part: ${hashPart}"
                 }
             }
         }
