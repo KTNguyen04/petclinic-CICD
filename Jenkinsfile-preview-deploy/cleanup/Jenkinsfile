@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Find Oldest Preview Deployment Namespace') {
+            steps {
+                script {
+                    echo "Finding preview-deploy namespaces..."
+
+                    // Get namespaces has "preview-deploy" prefix and timestamp
+                    def namespaces = sh(script: "kubectl get namespaces --no-headers -o custom-columns=':metadata.name,:metadata.creationTimestamp' | grep ^preview-deploy", returnStdout: true).trim().split("\n")
+
+                    if (namespaces) {
+                        // Sort by creationTimestamp
+                        def sortedNamespaces = namespaces.sort { a, b ->
+                            def timestampA = a.split("\\s+")[1]
+                            def timestampB = b.split("\\s+")[1]
+                            return timestampA <=> timestampB  // So sánh timestamp
+                        }
+
+                        // Get oldest namespace
+                        env.OLDEST_NAMESPACE = sortedNamespaces[0].split("\\s+")[0]  // Namespace đầu tiên trong danh sách sắp xếp
+                        echo "Found oldest preview deployment in namespace: ${env.OLDEST_NAMESPACE}"
+                    } else {
+                        echo "No preview-deploy namespaces found."
+                        env.OLDEST_NAMESPACE = ""
+                    }
+                }
+            }
+        }
+
+        stage('Clean Oldest Deployment') {
+            when {
+                expression { return env.OLDEST_NAMESPACE != "" }
+            }
+            steps {
+                script {
+                    echo "Cleaning Helm release and namespace: ${env.OLDEST_NAMESPACE}"
+
+                
+                    def releaseName = env.OLDEST_NAMESPACE
+
+                    sh """
+                        helm uninstall ${releaseName} -n ${env.OLDEST_NAMESPACE} || true
+                        kubectl delete namespace ${env.OLDEST_NAMESPACE} --ignore-not-found
+                    """
+                }
+            }
+        }
+
+    }
+}
