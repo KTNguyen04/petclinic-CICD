@@ -131,9 +131,14 @@ pipeline {
             steps {
                 script {
                     def COMMIT_ID = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    def IMAGE_TAG = COMMIT_ID
                     def services = []
 
                     if (env.BRANCH_NAME == 'main') {
+                        // If current commit has git tag
+                        def TAG_NAME = sh(script: "git describe --exact-match --tags || true", returnStdout: true).trim()
+                        IMAGE_TAG = TAG_NAME ? TAG_NAME : 'latest'
+
                         sh './mvnw clean install -P buildDocker'
                         services = sh(script: "ls -d spring-petclinic*/ | cut -f1 -d'/'", returnStdout: true).trim().split("\n")
                     } else if (AFFECTED_SERVICES?.trim()) {
@@ -148,11 +153,8 @@ pipeline {
                         if (services) {
                             for (service in services) {
                                 def serviceName = service.trim().replace("/", "")
-                                def originalTag = "latest"
-                                def tag = (env.BRANCH_NAME == 'main') ? 'latest' : COMMIT_ID
-
-                                def sourceImage = "${DOCKERHUB_USERNAME}/${serviceName}:${originalTag}"
-                                def targetImage = "${DOCKERHUB_USERNAME}/${serviceName}:${tag}"
+                                def sourceImage = "${DOCKERHUB_USERNAME}/${serviceName}:latest"
+                                def targetImage = "${DOCKERHUB_USERNAME}/${serviceName}:${IMAGE_TAG}"
 
                                 echo "Tagging image ${sourceImage} as ${targetImage}..."
 
