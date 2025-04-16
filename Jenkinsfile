@@ -188,7 +188,7 @@ pipeline {
 
                     // Clone nếu thư mục chưa tồn tại hoặc chưa phải repo Git
                     if (!fileExists("${CONFIG_REPO_PATH}/.git")) {
-                        withCredentials([string(credentialsId: 'github-app-token-id', variable: 'GITHUB_TOKEN')]) {
+                        withCredentials([string(credentialsId: 'petclinic-CICD-App', variable: 'GITHUB_TOKEN')]) {
                             sh """
                                 git clone https://x-access-token:${GITHUB_TOKEN}@github.com/your-org/config-repo.git ${CONFIG_REPO_PATH}
                             """
@@ -214,7 +214,7 @@ pipeline {
                             }
 
                             // Commit và push   
-                            withCredentials([string(credentialsId: 'github-app-token-id', variable: 'GITHUB_TOKEN')]) {
+                            withCredentials([string(credentialsId: 'petclinic-CICD-App', variable: 'GITHUB_TOKEN')]) {
                                 sh """
                                     git config user.name "KTNguyen04"
                                     git config user.email "championvi12@gmail.com"
