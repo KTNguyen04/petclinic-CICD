@@ -123,6 +123,11 @@ pipeline {
         }
 
         stage('Build and Push Docker Image') {
+            when {
+                not {
+                    buildingTag()
+                }
+            }
             environment {
                 DOCKERHUB_USERNAME = 'championvi12'
             }
@@ -130,16 +135,10 @@ pipeline {
                 script {
                     def COMMIT_ID = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
 
-                    // Ensure we have all tags
-                    sh "git fetch --tags"
-
-                    // Try to find tag pointing to current HEAD
-                    def TAG_NAME = sh(script: "git describe --exact-match --tags || true", returnStdout: true).trim()
-
+          
                     def IMAGE_TAG = ""
-                    if (TAG_NAME) {
-                        IMAGE_TAG = TAG_NAME
-                    } else if (env.BRANCH_NAME == 'main') {
+                    
+                    if (env.BRANCH_NAME == 'main') {
                         IMAGE_TAG = 'latest'
                     } else {
                         IMAGE_TAG = COMMIT_ID
@@ -181,17 +180,48 @@ pipeline {
         }
 
 
-
-        stage('Update Config Repo') {
+        stage('Build on Tag') {
             when {
-                branch 'main'
+                buildingTag()
+            }
+            environment {
+                DOCKERHUB_USERNAME = 'championvi12'
             }
             steps {
                 script {
-                    def TAG_NAME = sh(script: "git describe --exact-match --tags || true", returnStdout: true).trim()
+                    def IMAGE_TAG = env.TAG_NAME
+                    echo "Building on tag: ${IMAGE_TAG}"
+
+                    sh './mvnw clean install -P buildDocker'
+                    def services = sh(script: "ls -d spring-petclinic*/ | cut -f1 -d'/'", returnStdout: true).trim().split("\n")
+
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-cre') {
+                        for (service in services) {
+                            def serviceName = service.trim().replace("/", "")
+                            def sourceImage = "${DOCKERHUB_USERNAME}/${serviceName}:latest"
+                            def targetImage = "${DOCKERHUB_USERNAME}/${serviceName}:${IMAGE_TAG}"
+
+                            echo "Tagging image ${sourceImage} as ${targetImage}..."
+                            sh "docker tag ${sourceImage} ${targetImage}"
+
+                            echo "Pushing image ${targetImage}..."
+                            docker.image(targetImage).push()
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Update Config Repo') {
+            when {
+                buildingTag()
+            }
+            steps {
+                script {
+                    def TAG_NAME = env.TAG_NAME
                     def CONFIG_REPO_URL = "https://github.com/KTNguyen04/petclinic-CICD-config.git"
                     def CONFIG_REPO_PATH = "${env.WORKSPACE}/petclinic-CICD-config"
-
 
                     echo "Preparing config repo at ${CONFIG_REPO_PATH}"
 
@@ -204,41 +234,39 @@ pipeline {
                         }
                     }
 
-                    // Bắt đầu cập nhật tag nếu có
+                    // Bắt đầu cập nhật tag
                     dir(CONFIG_REPO_PATH) {
                         sh "git pull origin master"
 
-                        if (TAG_NAME) {
-                            echo "Git tag detected: ${TAG_NAME} - Updating Helm staging values.yaml files"
-                            def SERVICES_DIR = "helm/staging/values"
-                            def SERVICE_NAMES = sh(
-                                script: "ls ${SERVICES_DIR}",
-                                returnStdout: true
-                            ).trim().split('\n')
+                        echo "Git tag detected: ${TAG_NAME} - Updating Helm staging values.yaml files"
+                        def SERVICES_DIR = "helm/staging/values"
+                        def SERVICE_NAMES = sh(
+                            script: "ls ${SERVICES_DIR}",
+                            returnStdout: true
+                        ).trim().split('\n')
 
-                            SERVICE_NAMES.each { service ->
-                                def filePath = "${SERVICES_DIR}/${service}/values.yaml"
-                                echo "Updating tag in ${filePath}"
-                                sh """sed -i 's/\\(tag:\\s*\\).*/\\1"${TAG_NAME}"/' ${filePath}"""
-                            }
-
-                            // Commit và push   
-                            withCredentials([string(credentialsId: 'petclinic-CICD-config-token', variable: 'GITHUB_TOKEN')]) {
-                                sh """
-                                    git config user.name "KTNguyen04"
-                                    git config user.email "championvi12@gmail.com"
-                                    git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/KTNguyen04/petclinic-CICD-config.git
-                                    git add .
-                                    git commit -m 'Update config from ${env.JOB_NAME} build ${env.BUILD_NUMBER} ${TAG_NAME ? "for tag ${TAG_NAME}" : ""}' || echo "No changes to commit"
-                                    git push origin master
-                                """
-                            }
+                        SERVICE_NAMES.each { service ->
+                            def filePath = "${SERVICES_DIR}/${service}/values.yaml"
+                            echo "Updating tag in ${filePath}"
+                            sh """sed -i 's/\\(tag:\\s*\\).*/\\1"${TAG_NAME}"/' ${filePath}"""
                         }
 
+                        // Commit và push
+                        withCredentials([string(credentialsId: 'petclinic-CICD-config-token', variable: 'GITHUB_TOKEN')]) {
+                            sh """
+                                git config user.name "KTNguyen04"
+                                git config user.email "championvi12@gmail.com"
+                                git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/KTNguyen04/petclinic-CICD-config.git
+                                git add .
+                                git commit -m 'Update config from ${env.JOB_NAME} build ${env.BUILD_NUMBER} for tag ${TAG_NAME}' || echo "No changes to commit"
+                                git push origin master
+                            """
+                        }
                     }
                 }
             }
         }
+
 
 
 
