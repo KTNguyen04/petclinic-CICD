@@ -172,6 +172,68 @@ pipeline {
             }
         }
 
+
+        stage('Update Config Repo') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    def TAG_NAME = sh(script: "git describe --exact-match --tags || true", returnStdout: true).trim()
+                    def CONFIG_REPO_URL = "https://github.com/your-org/config-repo.git"
+                    def CONFIG_REPO_PATH = "${env.WORKSPACE}/petclinic-CICD-config"
+
+
+                    echo "Preparing config repo at ${CONFIG_REPO_PATH}"
+
+                    // Clone nếu thư mục chưa tồn tại hoặc chưa phải repo Git
+                    if (!fileExists("${CONFIG_REPO_PATH}/.git")) {
+                        withCredentials([string(credentialsId: 'github-app-token-id', variable: 'GITHUB_TOKEN')]) {
+                            sh """
+                                git clone https://x-access-token:${GITHUB_TOKEN}@github.com/your-org/config-repo.git ${CONFIG_REPO_PATH}
+                            """
+                        }
+                    }
+
+                    // Bắt đầu cập nhật tag nếu có
+                    dir(CONFIG_REPO_PATH) {
+                        sh "git pull origin master"
+
+                        if (TAG_NAME) {
+                            echo "Git tag detected: ${TAG_NAME} - Updating Helm staging values.yaml files"
+                            def SERVICES_DIR = "helm/staging/values"
+                            def SERVICE_NAMES = sh(
+                                script: "ls ${SERVICES_DIR}",
+                                returnStdout: true
+                            ).trim().split('\n')
+
+                            SERVICE_NAMES.each { service ->
+                                def filePath = "${SERVICES_DIR}/${service}/values.yaml"
+                                echo "Updating tag in ${filePath}"
+                                sh """sed -i 's/\\(tag:\\s*\\).*/\\1"${TAG_NAME}"/' ${filePath}"""
+                            }
+
+                            // Commit và push   
+                            withCredentials([string(credentialsId: 'github-app-token-id', variable: 'GITHUB_TOKEN')]) {
+                                sh """
+                                    git config user.name "KTNguyen04"
+                                    git config user.email "championvi12@gmail.com"
+                                    git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/your-org/config-repo.git
+                                    git add .
+                                    git commit -m 'Update config from ${env.JOB_NAME} build ${env.BUILD_NUMBER} ${TAG_NAME ? "for tag ${TAG_NAME}" : ""}' || echo "No changes to commit"
+                                    git push origin master
+                                """
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+
+
+
     }
 }
 
