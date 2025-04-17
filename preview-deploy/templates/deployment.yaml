@@ -21,6 +21,9 @@ spec:
           image: "{{ $svc.image }}:{{ $svc.tag }}"
           ports:
             - containerPort: {{ $svc.port }}
+          env:
+            - name: EUREKA_INSTANCE_HOSTNAME 
+              value: {{ $name }} 
 ---
 {{- end }}
 {{- end }}
